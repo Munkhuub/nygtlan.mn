@@ -1,10 +1,10 @@
 import { config } from "dotenv";
 import cors from "cors";
 import express from "express";
-import profileRouter from "../src/routes/profile.route";
-import authRouter from "../src/routes/auth.route";
-import { bankCardRouter } from "../src/routes/bankCard.route";
-import { donationRouter } from "../src/routes/donation.route";
+import profileRouter from "./routes/profile.route";
+import authRouter from "./routes/auth.route";
+import { bankCardRouter } from "./routes/bankCard.route";
+import { donationRouter } from "./routes/donation.route";
 
 config();
 

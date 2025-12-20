@@ -1,5 +1,5 @@
 {
-  "name": "buy-api",
+  "name": "finance-api",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,8 @@
     "dev": "nodemon src/index.ts",
     "build": "npm run setup && tsc",
     "start": "node api/index.ts",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "seed": "tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
