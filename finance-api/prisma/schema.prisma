@@ -11,55 +11,120 @@ model User {
   id        Int       @id @default(autoincrement())
   email     String    @unique
   password  String
-  username  String    @unique
+  username  String    @unique  
+  phone     String?
+  avatar    String? 
+  role      UserRole  @default(USER)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   companies Company[]
 }
 
+enum UserRole {
+  ADMIN
+  ACCOUNTANT
+  USER
+}
+
 model Company {
-  id             Int            @id @default(autoincrement())
-  name           String
-  taxId          String?        @unique
-  userId         Int
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accounts       Account[]
-  journalEntries JournalEntry[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id               Int               @id @default(autoincrement())
+  name             String
+  taxId            String?           @unique
+  address          String?
+  phone            String?
+  email            String?
+  fiscalYearStart  Int               @default(1) // Санхүүгийн жилийн эхлэх сар (1-12)
+  baseCurrency     Currency          @default(MNT)
+  userId           Int
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accounts         Account[]
+  journalEntries   JournalEntry[]
+  accountingPeriods AccountingPeriod[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([userId])
 }
 
 enum AccountType {
-  ASSET
-  LIABILITY
-  EQUITY
-  REVENUE
-  EXPENSE
+  CURRENT_ASSET         // Эргэлтийн хөрөнгө
+  NON_CURRENT_ASSET     // Эргэлтийн бус хөрөнгө
+  CURRENT_LIABILITY     // Богино хугацаат өр
+  NON_CURRENT_LIABILITY // Урт хугацаат өр
+  EQUITY                // Өмч
+  REVENUE               // Орлого
+  EXPENSE               // Зардал
+  COST_OF_GOODS_SOLD    // Борлуулалтын өртөг (нэмэлт)
+}
+
+enum NormalSide {
+  DEBIT
+  CREDIT
+}
+
+enum Currency {
+  MNT
+  USD
+  EUR
+  KRW
+  CNY
+  JPY
+  RUB
 }
 
 model Account {
-  id           Int           @id @default(autoincrement())
-  code         String
-  name         String
-  type         AccountType
-  companyId    Int
-  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  journalLines JournalLine[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  
+  id            Int           @id @default(autoincrement())
+  code          String        // 1010, 1020 гэх мэт
+  name          String        // Касс, Харилцах данс гэх мэт
+  type          AccountType
+  normalSide    NormalSide
+  parentId      Int?          // Нэмэлт: Эцэг данс (hierarchy-д зориулж)
+  parent        Account?      @relation("AccountHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children      Account[]     @relation("AccountHierarchy")
+  level         Int           @default(0) // 0 = parent, 1 = child, 2 = sub-child
+  isActive      Boolean       @default(true)
+  isTaxAccount  Boolean       @default(false)
+  description   String?       // Дансны тайлбар
+  companyId     Int
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalLines  JournalLine[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
   @@unique([code, companyId])
+  @@index([companyId])
+  @@index([type])
+  @@index([parentId])
+}
+
+enum JournalEntryStatus {
+  DRAFT    // Ноорог
+  POSTED   // Бүртгэсэн
+  VOID     // Цуцласан
 }
 
 model JournalEntry {
-  id          Int           @id @default(autoincrement())
-  date        DateTime
-  description String
-  companyId   Int
-  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  lines       JournalLine[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id           Int                @id @default(autoincrement())
+  entryNumber  String             // JE-2023-001 гэх мэт
+  date         DateTime
+  description  String
+  reference    String?            // Invoice #, Receipt # гэх мэт
+  status       JournalEntryStatus @default(POSTED)
+  periodId     Int?
+  period       AccountingPeriod?  @relation(fields: [periodId], references: [id])
+  companyId    Int
+  company      Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines        JournalLine[]
+  attachments  Attachment[]       // Нэмэлт: Баримт хавсаргах
+  createdById  Int?               // Хэн үүсгэсэн
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@unique([entryNumber, companyId])
+  @@index([companyId])
+  @@index([date])
+  @@index([status])
+  @@index([periodId])
 }
 
 model JournalLine {
@@ -67,10 +132,45 @@ model JournalLine {
   journalEntryId Int
   journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
   accountId      Int
-  account        Account      @relation(fields: [accountId], references: [id])
+  account        Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
   debit          Decimal      @default(0) @db.Decimal(15, 2)
   credit         Decimal      @default(0) @db.Decimal(15, 2)
-  
+  currency       Currency     @default(MNT)
+  exchangeRate   Decimal?     @db.Decimal(15, 6)
+  memo           String?      // Мөрийн тайлбар
+  lineOrder      Int          @default(0) // Дараалал
+
   @@index([journalEntryId])
   @@index([accountId])
+}
+
+model AccountingPeriod {
+  id             Int            @id @default(autoincrement())
+  name           String         // "Q1 2024", "January 2024" гэх мэт
+  companyId      Int
+  company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  startDate      DateTime
+  endDate        DateTime
+  isClosed       Boolean        @default(false)
+  closedAt       DateTime?
+  closedBy       Int?
+  journalEntries JournalEntry[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([companyId, startDate, endDate])
+  @@index([companyId])
+}
+
+model Attachment {
+  id             Int          @id @default(autoincrement())
+  fileName       String
+  fileUrl        String
+  fileSize       Int          // bytes
+  mimeType       String       // image/png, application/pdf
+  journalEntryId Int
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  uploadedAt     DateTime     @default(now())
+
+  @@index([journalEntryId])
 }
