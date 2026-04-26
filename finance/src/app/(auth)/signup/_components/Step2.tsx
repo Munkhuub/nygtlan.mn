@@ -3,9 +3,11 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useFormContext } from "../../FormProvider";
+import { useLanguage } from "@/app/_providers/LanguageProvider";
 
 export const Step2 = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const { text } = useLanguage();
   const {
     prevStep,
     emailPasswordForm,
@@ -37,15 +39,22 @@ export const Step2 = () => {
         </Button>
 
         <div>
-          <h3 className="text-2xl font-semibold">Complete your account</h3>
+          <h3 className="text-2xl font-semibold">
+            {text("Бүртгэлээ гүйцээх", "Complete your account")}
+          </h3>
           <p className="text-gray-500 text-sm">
-            Add your email and create a strong password
+            {text(
+              "Имэйлээ нэмээд хүчтэй нууц үг үүсгэнэ үү",
+              "Add your email and create a strong password",
+            )}
           </p>
         </div>
 
         <div className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50">
           <div className="text-sm">
-            <span className="text-gray-500">Username:</span>
+            <span className="text-gray-500">
+              {text("Хэрэглэгчийн нэр:", "Username:")}
+            </span>
             <span className="ml-2 font-medium">{formValues.username}</span>
           </div>
         </div>
@@ -55,7 +64,10 @@ export const Step2 = () => {
             <div className="w-full h-12 px-4 py-3 border border-gray-200 rounded-lg">
               <input
                 type="email"
-                placeholder="Enter your email address"
+                placeholder={text(
+                  "Имэйл хаягаа оруулна уу",
+                  "Enter your email address",
+                )}
                 className="h-full w-full border-none text-base focus:outline-none"
                 {...register("email")}
               />
@@ -71,7 +83,7 @@ export const Step2 = () => {
             <div className="w-full h-12 px-4 py-3 border border-gray-200 rounded-lg">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Password"
+                placeholder={text("Нууц үг", "Password")}
                 className="h-full w-full border-none text-base focus:outline-none"
                 {...register("password")}
               />
@@ -82,7 +94,7 @@ export const Step2 = () => {
             <div className="w-full h-12 px-4 py-3 border border-gray-200 rounded-lg">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Confirm Password"
+                placeholder={text("Нууц үгээ давтах", "Confirm Password")}
                 className="h-full w-full border-none text-base focus:outline-none"
                 {...register("confirmPassword")}
               />
@@ -107,7 +119,7 @@ export const Step2 = () => {
               htmlFor="showPassword"
               className="text-sm text-gray-500 cursor-pointer"
             >
-              Show password
+              {text("Нууц үгийг харах", "Show password")}
             </label>
           </div>
         </div>
@@ -117,13 +129,15 @@ export const Step2 = () => {
           type="submit"
           disabled={isSubmitting || !formState.isValid}
         >
-          {isSubmitting ? "Creating Account..." : "Create Account"}
+          {isSubmitting
+            ? text("Бүртгэл үүсгэж байна...", "Creating Account...")
+            : text("Бүртгэл үүсгэх", "Create Account")}
         </Button>
 
         <div className="text-center text-sm text-gray-500">
-          Already have an account?{" "}
+          {text("Бүртгэлтэй юу?", "Already have an account?")}{" "}
           <Link href="/signin" className="text-blue-600 hover:underline">
-            Log in
+            {text("Нэвтрэх", "Log in")}
           </Link>
         </div>
       </form>

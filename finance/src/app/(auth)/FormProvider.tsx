@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useAuth } from "../_providers/AuthProvider";
+import { useLanguage } from "../_providers/LanguageProvider";
 
 interface errorMessage {
   response?: {
@@ -84,6 +85,7 @@ type FormProviderProps = {
 
 export const FormProvider = ({ children }: FormProviderProps) => {
   const { signUp } = useAuth();
+  const { text } = useLanguage();
   const [step, setStep] = useState(0);
   const [formValues, setFormValues] = useState<FormValues>({
     username: "",
@@ -143,29 +145,38 @@ export const FormProvider = ({ children }: FormProviderProps) => {
         password: combinedValues.password,
       });
 
-      toast.success("Account created successfully!");
+      toast.success(
+        text("Бүртгэл амжилттай үүслээ.", "Account created successfully!"),
+      );
     } catch (error) {
       console.error("Signup error:", error);
 
       if (isErrorWithMessage(error) && error.response?.data?.error) {
         const errorMessage = error.response.data.error;
+        const normalizedMessage = errorMessage.toLowerCase();
 
-        if (errorMessage.includes("Username")) {
+        if (normalizedMessage.includes("username")) {
           usernameForm.setError("username", {
             type: "manual",
-            message: errorMessage,
+            message: "Username is already taken",
           });
           setStep(0);
-        } else if (errorMessage.includes("Email")) {
+        } else if (normalizedMessage.includes("email")) {
           emailPasswordForm.setError("email", {
             type: "manual",
-            message: errorMessage,
+            message: "Email is already registered",
           });
         }
 
-        toast.error(errorMessage);
+        toast.error(
+          normalizedMessage.includes("username")
+            ? text("Хэрэглэгчийн нэр бүртгэлтэй байна.", "Username is already taken")
+            : normalizedMessage.includes("email")
+              ? text("Имэйл хаяг бүртгэлтэй байна.", "Email is already registered")
+              : errorMessage,
+        );
       } else {
-        toast.error("Signup failed");
+        toast.error(text("Бүртгэл амжилтгүй боллоо.", "Signup failed"));
       }
     } finally {
       setIsSubmitting(false);

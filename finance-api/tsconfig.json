@@ -18,6 +18,9 @@
     "removeComments": true,
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },
+  "ts-node": {
+    "files": true
+  },
   "include": ["src/**/*", "api/**/*"],
   "exclude": ["node_modules", "dist", "prisma/migrations"]
 }

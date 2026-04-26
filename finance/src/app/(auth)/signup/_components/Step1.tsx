@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useFormContext } from "../../FormProvider";
+import { UsernameFormValues, useFormContext } from "../../FormProvider";
+import { useLanguage } from "@/app/_providers/LanguageProvider";
 
 export const Step1 = () => {
   const { nextStep, usernameForm, updateFormValues } = useFormContext();
+  const { text } = useLanguage();
   const { register, handleSubmit, formState } = usernameForm;
 
-  const onSubmit = handleSubmit((data) => {
+  const onSubmit = handleSubmit((data: UsernameFormValues) => {
     updateFormValues(data);
     nextStep();
   });
@@ -15,9 +17,14 @@ export const Step1 = () => {
     <div className="w-full md:w-[50%] p-4 sm:p-6 lg:p-8 flex justify-center md:items-center mt-16">
       <form className="w-full max-w-md flex flex-col gap-6" onSubmit={onSubmit}>
         <div>
-          <h3 className="text-2xl font-semibold">Create your account</h3>
+          <h3 className="text-2xl font-semibold">
+            {text("Бүртгэл үүсгэх", "Create your account")}
+          </h3>
           <p className="text-gray-500 text-sm">
-            Choose a username for your page
+            {text(
+              "Ашиглах хэрэглэгчийн нэрээ сонгоно уу",
+              "Choose a username for your page",
+            )}
           </p>
         </div>
 
@@ -25,7 +32,10 @@ export const Step1 = () => {
           <div className="w-full h-10 px-4 py-3 border border-gray-200 rounded-lg flex items-center">
             <input
               type="text"
-              placeholder="Enter username here"
+              placeholder={text(
+                "Хэрэглэгчийн нэрээ оруулна уу",
+                "Enter username here",
+              )}
               className="h-full w-full border-none text-base focus:outline-none"
               {...register("username")}
             />
@@ -42,13 +52,13 @@ export const Step1 = () => {
           type="submit"
           disabled={!formState.isValid}
         >
-          Continue
+          {text("Үргэлжлүүлэх", "Continue")}
         </Button>
 
         <div className="text-center text-sm text-gray-500">
-          Already have an account?
+          {text("Бүртгэлтэй юу?", "Already have an account?")}
           <Link href="/signin" className="text-blue-600 hover:underline">
-            Log in
+            {text("Нэвтрэх", "Log in")}
           </Link>
         </div>
       </form>

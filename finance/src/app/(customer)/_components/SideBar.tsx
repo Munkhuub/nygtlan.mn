@@ -1,63 +1,71 @@
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ExternalLink, Home, Settings, Eye } from "lucide-react";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { BookOpen, Building2, FileText, Home, Receipt } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useLanguage } from "@/app/_providers/LanguageProvider";
 
 const SideBar = () => {
-  const [selected, setSelected] = useState("Home");
-  const router = useRouter();
+  const pathname = usePathname();
+  const { text } = useLanguage();
 
   const menuItems = [
-    { name: "Home", icon: <Home className="size-4" />, path: "/" },
+    { name: text("Нүүр", "Home"), icon: <Home className="size-4" />, path: "/" },
     {
-      name: "View page",
-      icon: <Eye className="size-4" />,
-      path: "/view-page",
+      name: text("Компаниуд", "Companies"),
+      icon: <Building2 className="size-4" />,
+      path: "/companies/new",
     },
     {
-      name: "Account settings",
-      icon: <Settings className="size-4" />,
-      path: "/account-settings",
+      name: text("Дансууд", "Accounts"),
+      icon: <BookOpen className="size-4" />,
+      path: "/accounts",
+    },
+    {
+      name: text("Журнал", "Journal"),
+      icon: <Receipt className="size-4" />,
+      path: "/journal-entries",
+    },
+    {
+      name: text("Тайлан", "Reports"),
+      icon: <FileText className="size-4" />,
+      path: "/reports",
     },
   ];
 
-  const handleClick = (item: (typeof menuItems)[0]) => {
-    setSelected(item.name);
-    router.push(item.path);
-  };
-
   return (
     <>
-      <div className="hidden md:flex flex-col gap-1 w-64 ml-20 py-11 h-screen">
+      <div className="hidden md:flex md:w-64 md:flex-col md:gap-1 md:px-6 md:py-10">
         {menuItems.map((item) => (
-          <button
+          <Link
             key={item.name}
-            onClick={() => handleClick(item)}
-            className={`flex items-center px-4 py-3 mr-auto rounded-md hover:bg-gray-200 transition-colors ${
-              selected === item.name ? "bg-gray-200" : ""
-            }`}
-          >
-            <span className="mr-3">{item.icon}</span>
-            <span>{item.name}</span>
-            {item.name === "View page" && (
-              <ExternalLink className="size-4 ml-2" />
+            href={item.path}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900",
+              pathname === item.path && "bg-slate-900 text-white hover:bg-slate-900",
             )}
-          </button>
+          >
+            <span>{item.icon}</span>
+            <span>{item.name}</span>
+          </Link>
         ))}
       </div>
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50">
-        <div className="flex justify-around items-center py-2">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white/95 md:hidden">
+        <div className="flex items-center justify-around py-2">
           {menuItems.map((item) => (
-            <button
+            <Link
               key={item.name}
-              onClick={() => handleClick(item)}
-              className={`flex flex-col items-center p-2 rounded-lg w-full max-w-[100px] ${
-                selected === item.name ? "text-blue-600" : "text-gray-500"
-              }`}
+              href={item.path}
+              className={cn(
+                "flex w-full max-w-[100px] flex-col items-center rounded-lg p-2 text-slate-500",
+                pathname === item.path && "text-slate-950",
+              )}
             >
               <span>{item.icon}</span>
               <span className="text-xs mt-1">{item.name}</span>
-            </button>
+            </Link>
           ))}
         </div>
       </div>

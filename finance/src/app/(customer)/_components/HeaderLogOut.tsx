@@ -1,41 +1,23 @@
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
+"use client";
 import { useAuth } from "@/app/_providers/AuthProvider";
+import { useLanguage } from "@/app/_providers/LanguageProvider";
+import { Button } from "@/components/ui/button";
 
 export function HeaderLogOut() {
   const { user, signOut, loading } = useAuth();
+  const { text } = useLanguage();
   if (loading) {
     return null;
   }
-  console.log(user?.profile?.avatarImage);
   return (
-    <Select
-      onValueChange={(value) => {
-        if (value === "logout") {
-          signOut();
-        }
-      }}
-    >
-      <SelectTrigger className="w-[180px] border-none shadow-none">
-        <div className="flex gap-2 md:gap-3 items-center">
-          <img
-            src={user?.profile?.avatarImage || `default-avatar.png`}
-            alt={`${user?.profile?.name}'s profile picture`}
-            className="size-6 rounded-full object-cover"
-          />
-          <p className="text-black">{user?.profile?.name}</p>
-        </div>
-      </SelectTrigger>
-      <SelectContent className="flex items-center">
-        <SelectGroup>
-          <SelectItem value="logout">Log out</SelectItem>
-        </SelectGroup>
-      </SelectContent>
-    </Select>
+    <div className="flex items-center gap-3">
+      <div className="hidden text-right sm:block">
+        <p className="text-sm font-medium text-slate-900">{user?.username}</p>
+        <p className="text-xs text-slate-500">{user?.email}</p>
+      </div>
+      <Button variant="outline" onClick={() => signOut()} type="button">
+        {text("Гарах", "Log out")}
+      </Button>
+    </div>
   );
 }

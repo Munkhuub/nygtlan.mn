@@ -1,26 +1,28 @@
 import { config } from "dotenv";
 import cors from "cors";
 import express from "express";
-import profileRouter from "./routes/profile.route";
 import authRouter from "./routes/auth.route";
-import { bankCardRouter } from "./routes/bankCard.route";
-import { donationRouter } from "./routes/donation.route";
+import companyRouter from "./routes/company.route";
+import accountRouter from "./routes/account.route";
+import journalRouter from "./routes/journal.route";
+import reportRouter from "./routes/report.route";
 
 config();
 
 const app = express();
 
-app
-  .use(cors())
-  .use(express.json())
-  .use("/profile", profileRouter)
-  .use("/auth", authRouter)
-  .use("/bankCard", bankCardRouter)
-  .use("/donation", donationRouter);
+app.use(cors());
+app.use(express.json());
 
-app.get("/api", (req, res) => {
-  res.json({ message: "API is healthy!", timestamp: new Date().toISOString() });
+app.get("/", (req, res) => {
+  res.json({ message: "Accounting API is running" });
 });
+
+app.use("/auth", authRouter);
+app.use("/api/companies", companyRouter);
+app.use("/api/companies/:companyId/accounts", accountRouter);
+app.use("/api/companies/:companyId/journal-entries", journalRouter);
+app.use("/api/companies/:companyId/reports", reportRouter);
 
 app.use((err: any, req: any, res: any, next: any) => {
   console.error(err.stack);
@@ -30,7 +32,7 @@ app.use((err: any, req: any, res: any, next: any) => {
 export default app;
 
 if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

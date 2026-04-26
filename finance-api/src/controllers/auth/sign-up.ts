@@ -4,29 +4,35 @@ import { Request, Response } from "express";
 import { prisma } from "../../db";
 
 export const signup = async (req: Request, res: Response) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, phone, avatar } = req.body;
 
   if (!username || !email || !password) {
-    return res
-      .status(400)
-      .json({ message: "Username, email, and password are required" });
+    return res.status(400).json({
+      message: "Username, email, and password are required",
+      error: "MISSING_FIELDS",
+    });
   }
 
   try {
     const existingUser = await prisma.user.findFirst({
-      where: { email },
+      where: {
+        OR: [{ email }, { username }],
+      },
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const existingUsername = await prisma.user.findFirst({
-      where: { username },
-    });
-
-    if (existingUsername) {
-      return res.status(400).json({ message: "Username already taken" });
+      if (existingUser.email === email) {
+        return res.status(409).json({
+          message: "Email already registered",
+          error: "DUPLICATE_EMAIL",
+        });
+      }
+      if (existingUser.username === username) {
+        return res.status(409).json({
+          message: "Username already taken",
+          error: "DUPLICATE_USERNAME",
+        });
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -36,47 +42,47 @@ export const signup = async (req: Request, res: Response) => {
         username,
         email,
         password: hashedPassword,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        phone,
+        avatar,
+        role: "USER",
       },
-      include: {
-        profile: true,
-        bankCard: true,
-        sentDonations: {
-          include: {
-            recipient: {
-              include: { profile: true },
-            },
-          },
-        },
-        receivedDonations: {
-          include: {
-            donor: {
-              include: { profile: true },
-            },
-          },
-        },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        phone: true,
+        avatar: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       console.error("JWT_SECRET environment variable is not set");
-      return res.status(500).json({ message: "Server configuration error" });
+      return res.status(500).json({
+        message: "Server configuration error",
+        error: "MISSING_JWT_SECRET",
+      });
     }
 
     const token = jwt.sign(
       {
         userId: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
       },
-      jwtSecret
+      jwtSecret,
+      { expiresIn: "7d" },
     );
 
-    const { password: _, ...userWithoutPassword } = newUser;
-
     return res.status(201).json({
-      user: userWithoutPassword,
-      token: `Bearer ${token}`,
+      message: "Sign up successful",
+      data: {
+        user: newUser,
+        token,
+      },
     });
   } catch (error) {
     console.error("Signup error:", error);
@@ -87,9 +93,10 @@ export const signup = async (req: Request, res: Response) => {
       "code" in error &&
       error.code === "P2002"
     ) {
-      return res
-        .status(400)
-        .json({ message: "Email or username already exists" });
+      return res.status(409).json({
+        message: "Email or username already exists",
+        error: "DUPLICATE_USER",
+      });
     }
 
     return res.status(500).json({
